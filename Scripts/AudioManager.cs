@@ -56,6 +56,10 @@ namespace PedroAurelio.AudioSystem
 
         private void PlayAudio(AudioClipSO clipSO, Vector3 position, float delay)
         {
+            if (!clipSO.CanActivateNewInstance())
+                return;
+            
+            clipSO.AddInstance();
             var audioPlayer = _audioPlayerPool.Get();
             audioPlayer.PlayAudio(clipSO, position, delay, () => _audioPlayerPool.Release(audioPlayer));
         }
