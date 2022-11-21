@@ -25,6 +25,8 @@ namespace PedroAurelio.AudioSystem
             _audioSource.loop = _clipSO.Loop;
             _audioSource.spatialBlend = _clipSO.SpatialBlend;
             _audioSource.clip = _clipSO.Clip;
+            _audioSource.volume = clipSO.Volume;
+            _audioSource.pitch = clipSO.Pitch;
             _audioSource.outputAudioMixerGroup = _clipSO.MixerGroup;
             transform.position = position;
 
