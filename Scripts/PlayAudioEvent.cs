@@ -24,14 +24,7 @@ namespace PedroAurelio.AudioSystem
 
         private void OnValidate()
         {
-            if (delayRange.x > delayRange.y)
-                delayRange.x = delayRange.y;
-
-            if (delayRange.x < 0f)
-                delayRange.x = 0f;
-            
-            if (delayRange.y < delayRange.x)
-                delayRange.y = delayRange.x;
+            ClampDelay();
         }
 
         private void Start()
@@ -55,6 +48,12 @@ namespace PedroAurelio.AudioSystem
                 return;
             
             AudioManager.Instance.StopAudioPlayer(_playerID, fadeOutDuration);
+        }
+        
+        private void ClampDelay ()
+        {
+            delayRange.x = Mathf.Clamp(delayRange.x, 0, delayRange.y);
+            delayRange.y = Mathf.Clamp(delayRange.y, delayRange.x, float.MaxValue);
         }
 
         private void OnEnable()
