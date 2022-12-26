@@ -26,29 +26,8 @@ namespace PedroAurelio.AudioSystem
 
         private void OnValidate()
         {
-            if (volumeRange.x > volumeRange.y)
-                volumeRange.x = volumeRange.y;
-
-            if (volumeRange.x < 0f)
-                volumeRange.x = 0f;
-            
-            if (volumeRange.y < volumeRange.x)
-                volumeRange.y = volumeRange.x;
-
-            if (volumeRange.y > 1f)
-                volumeRange.y = 1f;
-
-            if (pitchRange.x > pitchRange.y)
-                pitchRange.x = pitchRange.y;
-            
-            if (pitchRange.x < -3f)
-                pitchRange.x = -3f;
-
-            if (pitchRange.y < pitchRange.x)
-                pitchRange.y = pitchRange.x;
-
-            if (pitchRange.y > 3f)
-                pitchRange.y = 3f;
+            ClampVolume();
+            ClampPitch();
         }
 
         public AudioClip GetClip()
@@ -79,5 +58,17 @@ namespace PedroAurelio.AudioSystem
 
         public void AddInstance() => _currentInstances++;
         public void RemoveInstance() => _currentInstances--;
+        
+        private void ClampVolume ()
+        {
+            volumeRange.x = Mathf.Clamp(volumeRange.x, 0, volumeRange.y);
+            volumeRange.y = Mathf.Clamp(volumeRange.y, volumeRange.x, 1);
+        }
+        
+        private void ClampPitch ()
+        {
+            pitchRange.x = Mathf.Clamp(pitchRange.x, -3, pitchRange.y);
+            pitchRange.y = Mathf.Clamp(pitchRange.y, pitchRange.x, 3);
+        }
     }
 }
