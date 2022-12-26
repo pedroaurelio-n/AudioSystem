@@ -6,8 +6,14 @@ namespace PedroAurelio.AudioSystem
 {
     public class AudioPlayer : MonoBehaviour
     {
+        public int ID { get => _id; set => _id = value; }
+
         private AudioSource _audioSource;
         private AudioClipSO _clipSO;
+        private AudioClip _clip;
+
+        private int _id;
+        private bool _isPlaying;
 
         private void Awake() => _audioSource = GetComponent<AudioSource>();
 
@@ -17,36 +23,80 @@ namespace PedroAurelio.AudioSystem
             _audioSource.enabled = false;
         }
 
-        public void PlayAudio(AudioClipSO clipSO, Vector3 position, float delay, Action releaseAction)
+        public void PlayAudio(AudioClipSO clipSO, float fadeInDuration, Vector3 position, Action releaseAction)
         {
             _clipSO = clipSO;
+            _clip = _clipSO.GetClip();
 
-            _audioSource.enabled = true;
-            _audioSource.loop = _clipSO.Loop;
-            _audioSource.spatialBlend = _clipSO.SpatialBlend;
-            _audioSource.clip = _clipSO.Clip;
-            _audioSource.volume = clipSO.Volume;
-            _audioSource.pitch = clipSO.Pitch;
-            _audioSource.outputAudioMixerGroup = _clipSO.MixerGroup;
+            if (_clip == null)
+                return;
+
             transform.position = position;
 
-            if (delay == 0f)
-                _audioSource.Play();
+            _audioSource.enabled = true;
+            _audioSource.clip = _clip;
+            _audioSource.loop = _clipSO.Loop;
+            _audioSource.spatialBlend = _clipSO.SpatialBlend;
+            _audioSource.pitch = clipSO.Pitch;
+            _audioSource.outputAudioMixerGroup = _clipSO.MixerGroup;
+
+            if (fadeInDuration == 0f)
+                _audioSource.volume = clipSO.Volume;
             else
-                _audioSource.PlayDelayed(delay);
+            {
+                _audioSource.volume = 0f;
+                StartCoroutine(FadeVolumeCoroutine(clipSO.Volume, fadeInDuration));
+            }
+
+            _audioSource.Play();
+
+            _isPlaying = true;
             
             if (!_audioSource.loop)
-                StartCoroutine(WaitForClipCoroutine(delay, releaseAction));
+                StartCoroutine(StopAfterClipCoroutine(releaseAction));
         }
 
-        private IEnumerator WaitForClipCoroutine(float delay, Action releaseAction)
+        private IEnumerator StopAfterClipCoroutine(Action releaseAction)
         {
-            if (delay != 0f)
-                yield return new WaitForSeconds(delay);
+            yield return new WaitForSeconds(_clip.length);
+            
+            DisableAudio(releaseAction);
+        }
 
-            yield return new WaitForSeconds(_clipSO.Clip.length);
+        public void StopAudio(float fadeDuration, Action releaseAction)
+        {
+            if (!_isPlaying)
+                return;
+            
+            if (fadeDuration <= 0f)
+                DisableAudio(releaseAction);
+            else
+                StartCoroutine(FadeVolumeCoroutine(0f, fadeDuration, releaseAction));
+        }
+
+        private IEnumerator FadeVolumeCoroutine(float targetVolume, float fadeDuration, Action releaseAction = null)
+        {
+            var timeElapsed = 0f;
+            var startVolume = _audioSource.volume;
+
+            while (timeElapsed < fadeDuration)
+            {
+                _audioSource.volume = Mathf.Lerp(startVolume, targetVolume, timeElapsed / fadeDuration);
+                timeElapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            _audioSource.volume = targetVolume;
+
+            if (targetVolume == 0f)
+                DisableAudio(releaseAction);
+        }
+
+        private void DisableAudio(Action releaseAction)
+        {
             _clipSO.RemoveInstance();
             _clipSO = null;
+            _isPlaying = false;
 
             releaseAction.Invoke();
         }

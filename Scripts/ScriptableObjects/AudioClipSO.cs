@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
  
@@ -7,7 +8,7 @@ namespace PedroAurelio.AudioSystem
     public class AudioClipSO : ScriptableObject
     {
         [Header("Audio Dependencies")]
-        public AudioClip Clip;
+        public List<AudioClip> Clips;
         public AudioMixerGroup MixerGroup;
 
         [Header("Clip Settings")]
@@ -48,6 +49,24 @@ namespace PedroAurelio.AudioSystem
 
             if (pitchRange.y > 3f)
                 pitchRange.y = 3f;
+        }
+
+        public AudioClip GetClip()
+        {
+            if (Clips.Count == 0)
+            {
+                Debug.LogError($"At least 1 AudioClip is needed.");
+                return null;
+            }
+
+            if (Clips.Count == 1)
+                return Clips[0];
+
+            else
+            {
+                var randomIndex = Random.Range(0, Clips.Count);
+                return Clips[randomIndex];
+            }
         }
 
         public bool CanActivateNewInstance()
