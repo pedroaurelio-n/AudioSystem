@@ -30,6 +30,18 @@ namespace PedroAurelio.AudioSystem
             ClampPitch();
         }
 
+        private void ClampVolume()
+        {
+            volumeRange.x = Mathf.Clamp(volumeRange.x, 0f, volumeRange.y);
+            volumeRange.y = Mathf.Clamp(volumeRange.y, volumeRange.x, 1f);
+        }
+
+        private void ClampPitch()
+        {
+            pitchRange.x = Mathf.Clamp(pitchRange.x, -3f, pitchRange.y);
+            pitchRange.y = Mathf.Clamp(pitchRange.y, pitchRange.x, 3f);
+        }
+
         public AudioClip GetClip()
         {
             if (Clips.Count == 0)
@@ -58,17 +70,20 @@ namespace PedroAurelio.AudioSystem
 
         public void AddInstance() => _currentInstances++;
         public void RemoveInstance() => _currentInstances--;
-        
-        private void ClampVolume ()
+        private void ResetInstances() => _currentInstances = 0;
+
+        [UnityEditor.CustomEditor(typeof(AudioClipSO))]
+        public class AudioClipSOEditor : UnityEditor.Editor
         {
-            volumeRange.x = Mathf.Clamp(volumeRange.x, 0, volumeRange.y);
-            volumeRange.y = Mathf.Clamp(volumeRange.y, volumeRange.x, 1);
-        }
-        
-        private void ClampPitch ()
-        {
-            pitchRange.x = Mathf.Clamp(pitchRange.x, -3, pitchRange.y);
-            pitchRange.y = Mathf.Clamp(pitchRange.y, pitchRange.x, 3);
+            public override void OnInspectorGUI()
+            {
+                DrawDefaultInspector();
+
+                var audioClipSO = (AudioClipSO)target;
+
+                if (GUILayout.Button("Reset Instances"))
+                    audioClipSO.ResetInstances();
+            }
         }
     }
 }

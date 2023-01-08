@@ -31,7 +31,7 @@ namespace PedroAurelio.AudioSystem
         private AudioPlayer CreateAudioPlayer()
         {
             var newPlayer = new GameObject("AudioPlayer");
-            newPlayer.transform.SetParent(transform);
+            newPlayer.transform.parent = transform;
 
             newPlayer.AddComponent<AudioSource>();
             var audioPlayer = newPlayer.AddComponent<AudioPlayer>();
@@ -70,66 +70,74 @@ namespace PedroAurelio.AudioSystem
         }
         #endregion
 
-        private int GenerateID()
+        public AudioPlayer RequestAudioPlayer()
         {
-            int randomID;
-            var isIDRepeated = false;
-
-            do
-            {
-                randomID = Random.Range(0, int.MaxValue);
-                var player = IsAudioPlayerUsingID(randomID);
-                isIDRepeated = player != null;
-            } while (isIDRepeated);
-
-            return randomID;
+            var audioPlayer = GetAudioPlayer();
+            audioPlayer.Setup(this);
+            return audioPlayer;
         }
 
-        private AudioPlayer IsAudioPlayerUsingID(int id)
+        public AudioPlayer RequestAudioPlayer(AudioClipSO clipSO, float fadeInDuration, Vector3 position, float delay, Transform objectToFollow)
         {
-            foreach (AudioPlayer audioPlayer in _audioPlayerPool)
-            {
-                if (audioPlayer.ID != id)
-                    continue;
-                
-                else
-                    return audioPlayer;
-            }
+            if (!clipSO.CanActivateNewInstance())
+                return null;
+            
+            var audioPlayer = GetAudioPlayer();
 
-            return null;
+            PlayAudioPlayer(audioPlayer, clipSO, fadeInDuration, position, delay, objectToFollow);
+            return audioPlayer;
         }
 
-        public void RequestAudioPlayer(out int id, AudioClipSO clipSO, float fadeInDuration, Vector3 position, float delay)
+        public void PlayAudioPlayer(AudioPlayer audioPlayer, AudioClipSO clipSO, float fadeInDuration, Vector3 position, float delay, Transform objectToFollow)
         {
-            id = -1;
-
             if (!clipSO.CanActivateNewInstance())
                 return;
+
+            AddClipInstance(audioPlayer, clipSO);
+            audioPlayer.Setup(this, clipSO, position);
+
+            if (objectToFollow != null)
+                audioPlayer.transform.parent = objectToFollow;
+
+            StartCoroutine(CheckAudioDelay(audioPlayer, fadeInDuration, delay));
+        }
+
+        public void StopAudioPlayer(AudioPlayer audioPlayer, float fadeOutDuration)
+        {
+            if (audioPlayer == null)
+                return;
             
-            id = GenerateID();
-            clipSO.AddInstance();
-            var audioPlayer = GetAudioPlayer();
-            audioPlayer.ID = id;
+            audioPlayer.IsLooping = false;
+            audioPlayer.HasAddedInstance = false;
 
-            StartCoroutine(CheckAudioDelay(audioPlayer, clipSO, fadeInDuration, position, delay));
+            audioPlayer.StopAudio(fadeOutDuration, () => ReleaseAudioPlayer(audioPlayer));
         }
 
-        public void StopAudioPlayer(int id, float fadeOutDuration)
-        {
-            var audioPlayer = IsAudioPlayerUsingID(id);
-
-            if (audioPlayer != null)
-                audioPlayer.StopAudio(fadeOutDuration, () => ReleaseAudioPlayer(audioPlayer));
-        }
-
-        private IEnumerator CheckAudioDelay(AudioPlayer audioPlayer, AudioClipSO clipSO, float fadeInDuration, Vector3 position, float delay)
-        {
+        private IEnumerator CheckAudioDelay(AudioPlayer audioPlayer, float fadeInDuration, float delay)
+        {            
             if (delay == 0f)
-                audioPlayer.PlayAudio(clipSO, fadeInDuration, position, () => ReleaseAudioPlayer(audioPlayer));
+                audioPlayer.PlayAudio(fadeInDuration, () => ReleaseAudioPlayer(audioPlayer));
             else
             {
                 yield return new WaitForSeconds(delay);
-                audioPlayer.PlayAudio(clipSO, fadeInDuration, position, () => ReleaseAudioPlayer(audioPlayer));
+
+                if (audioPlayer.gameObject.activeInHierarchy)
+                    audioPlayer.PlayAudio(fadeInDuration, () => ReleaseAudioPlayer(audioPlayer));
+            }
+        }
+
+        private void AddClipInstance(AudioPlayer audioPlayer, AudioClipSO clipSO)
+        {
+            if (!audioPlayer.IsLooping && !clipSO.Loop)
+            {
+                clipSO.AddInstance();
+                return;
+            }
+                
+            if (!audioPlayer.HasAddedInstance)
+            {
+                clipSO.AddInstance();
+                audioPlayer.HasAddedInstance = true;
             }
         }
     }
