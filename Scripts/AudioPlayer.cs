@@ -98,6 +98,14 @@ namespace PedroAurelio.AudioSystem
                 StartCoroutine(FadeVolumeCoroutine(0f, fadeDuration, releaseAction));
         }
 
+        public void PauseAudio(bool value)
+        {
+            if (_clipSO == null || !_clipSO.Pausable)
+                return;
+
+            _audioSource.Pause(value);
+        }
+
         private IEnumerator FadeVolumeCoroutine(float targetVolume, float fadeDuration, Action releaseAction = null)
         {
             var timeElapsed = 0f;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEditor;
  
 namespace PedroAurelio.AudioSystem
 {
@@ -8,15 +9,16 @@ namespace PedroAurelio.AudioSystem
     public class AudioClipSO : ScriptableObject
     {
         [Header("Audio Dependencies")]
-        public List<AudioClip> Clips;
-        public AudioMixerGroup MixerGroup;
+        [SerializeField] private List<AudioClip> Clips;
+        [field: SerializeField] public AudioMixerGroup MixerGroup { get; private set; }
 
         [Header("Clip Settings")]
-        public int MaxInstances = 3;
+        [SerializeField] private int MaxInstances = 3;
+        [field: SerializeField] public bool Pausable { get; private set; } = false;
 
-        [Header("Source Settings")]
-        public bool Loop = false;
-        [Range(0f, 1f)] public float SpatialBlend = 0f;
+        [field: Header("Source Settings")]
+        [field: SerializeField] public bool Loop { get; private set; } = false;
+        [field: SerializeField, Range(0f, 1f)] public float SpatialBlend { get; private set; } = 0f;
         [SerializeField] private Vector2 volumeRange = Vector2.one;
         [SerializeField] private Vector2 pitchRange = Vector2.one;
         public float Volume => Random.Range(volumeRange.x, volumeRange.y);
@@ -72,7 +74,7 @@ namespace PedroAurelio.AudioSystem
         public void RemoveInstance() => _currentInstances--;
         private void ResetInstances() => _currentInstances = 0;
 
-        [UnityEditor.CustomEditor(typeof(AudioClipSO))]
+        [CustomEditor(typeof(AudioClipSO)), CanEditMultipleObjects]
         public class AudioClipSOEditor : UnityEditor.Editor
         {
             public override void OnInspectorGUI()

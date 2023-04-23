@@ -113,6 +113,12 @@ namespace PedroAurelio.AudioSystem
             audioPlayer.StopAudio(fadeOutDuration, () => ReleaseAudioPlayer(audioPlayer));
         }
 
+        public void PauseAudioPlayers(bool value)
+        {
+            foreach (AudioPlayer audioPlayer in _audioPlayerPool)
+                audioPlayer.PauseAudio(value);
+        }
+
         private IEnumerator CheckAudioDelay(AudioPlayer audioPlayer, float fadeInDuration, float delay)
         {            
             if (delay == 0f)
